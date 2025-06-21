@@ -976,20 +976,30 @@ with tab1:
         st.markdown("<div class='graph-title-container'>Family History Impact</div>", unsafe_allow_html=True)
         st.markdown("<div class='graph-content'>", unsafe_allow_html=True)
         
-        # Grouped bar chart for family history
+        # Stacked bar chart for family history (percentages)
         fam_data = pd.crosstab(filtered_df['Family_History'], filtered_df['Obesity_Level'])
-        
         if not fam_data.empty:
-            fig = px.bar(fam_data.reset_index(), x='Family_History', y=fam_data.columns,
-                        barmode='group', color_discrete_map=OBESITY_COLORS,
-                        labels={"value": "Count", "variable": "Obesity Class"})
-            
+            fam_pct = fam_data.div(fam_data.sum(axis=1), axis=0) * 100
+            plot_data = fam_pct.reset_index().melt(
+                id_vars=['Family_History'],
+                var_name='Obesity Class',
+                value_name='Percentage'
+            )
+            fig = px.bar(plot_data, x='Family_History', y='Percentage', color='Obesity Class',
+                        barmode='stack', color_discrete_map=OBESITY_COLORS,
+                        labels={"Family_History": "Family History", "Percentage": "Percentage (%)", "Obesity Class": "Obesity Class"})
+            fig.update_layout(
+                xaxis_title="Family History",
+                yaxis_title="Percentage (%)",
+                legend_title="Obesity Class",
+                height=250
+            )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Not enough data for this visualization.")
         
         with st.expander("📈 Chart Insights"):
-            st.markdown("<div class='insights-box'><div class='insights-title'>What This Shows</div>This grouped bar chart compares the distribution of obesity classes between individuals with and without a family history of obesity. It helps visualize the genetic component of obesity risk.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='insights-box'><div class='insights-title'>What This Shows</div>This stacked bar chart shows the percentage distribution of obesity classes for individuals with and without a family history of obesity. Each bar adds up to 100% for each group, allowing direct comparison of risk profiles.</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -998,25 +1008,24 @@ with tab1:
         st.markdown("<div class='graph-title-container'>Smoking Status Relationship</div>", unsafe_allow_html=True)
         st.markdown("<div class='graph-content'>", unsafe_allow_html=True)
         
-        # Treemap for smoking
-        smoke_data = filtered_df.groupby(['Smoker', 'Obesity_Level']).size().reset_index(name='Count')
-        
+        # Heatmap for smoking status vs obesity class (percentages)
+        smoke_data = pd.crosstab(filtered_df['Smoker'], filtered_df['Obesity_Level'], normalize='index') * 100
         if not smoke_data.empty:
-            # Create a custom color dictionary for the treemap
-            treemap_colors = {**{'Yes': PRIMARY_COLORS['RED'], 'No': PRIMARY_COLORS['BLUE']}, **OBESITY_COLORS}
-            
-            fig = px.treemap(smoke_data, 
-                            path=['Smoker', 'Obesity_Level'], 
-                            values='Count',
-                            color='Obesity_Level',
-                            color_discrete_map=treemap_colors)
-            
+            fig = px.imshow(smoke_data,
+                            labels=dict(x="Obesity Class", y="Smoking Status", color="Percentage (%)"),
+                            color_continuous_scale=[[0, LIGHT_COLORS['INDIGO_100']], [0.5, DARK_COLORS['INDIGO_300']], [1, PRIMARY_COLORS['INDIGO']]],
+                            text_auto='.1f')
+            fig.update_layout(
+                xaxis_title="Obesity Class",
+                yaxis_title="Smoking Status",
+                height=250
+            )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Not enough data for this visualization.")
         
         with st.expander("📈 Chart Insights"):
-            st.markdown("<div class='insights-box'><div class='insights-title'>What This Shows</div>This treemap visualizes the hierarchical distribution of obesity classes within smoking status groups. The size of each rectangle represents the count of individuals in that category.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='insights-box'><div class='insights-title'>What This Shows</div>This heatmap shows the percentage of each obesity class within smoking and non-smoking groups. Darker colors indicate higher percentages, allowing for quick comparison of risk profiles between smokers and non-smokers.</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
