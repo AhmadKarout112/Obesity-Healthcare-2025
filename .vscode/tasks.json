@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Obesity Healthcare Dashboard",
+			"type": "shell",
+			"command": "streamlit run app.py",
+			"group": "run",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
